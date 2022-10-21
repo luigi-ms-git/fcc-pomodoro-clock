@@ -22,7 +22,7 @@
     <div class="row">
       <div class="col-12 border border-light p-3 text-center" id="timer-label">
         <p id="timer-left" class="fs-3">{{ timer }}</p>
-        <button @click="countDown" id="start_stop" class="btn btn-danger">{{ startStop }}</button>
+        <button @click="startCount" id="start_stop" class="btn btn-danger">{{ startStop }}</button>
         <button @click="reset" id="reset" class="btn btn-info">Reset</button>
       </div>
     </div>
@@ -64,7 +64,8 @@
           sessionLength: Values.DEFAULT_SESS,
           startStop: "Start",
           timer: "",
-          started: false
+          started: false,
+          countingSession: false
         }
       },
       watch: {
@@ -76,15 +77,35 @@
         this.timer = this.sessionLength + ":00";
       },
       methods: {
-        countDown(){
-          this.startStop = "Stop";
+        startCount(){
           this.started = !this.started;
+          this.toggleCount();
+        },
+        toggleCount(){
+          this.countingSession = !this.countingSession;
           
-          const start = new Date().getTime() + (this.sessionLength * 60000);
-          
-          const int = setInterval(() => {
+          if(this.started){
+            this.startStop = "Stop";
+            
+            if(this.countingSession){
+              console.log("In session");
+              const session = new Date().getTime() + (this.sessionLength * 60000);
+              this.countDown(session);
+              
+            }else{
+              console.log("In break");
+              const breakTime = new Date().getTime() + (this.breakLength * 60000);
+              this.countDown(breakTime);
+              
+            }
+          }else{
+            this.startStop = "Start";
+          }
+        },
+        countDown(start){
+          const id = setInterval(() => {
             if(this.started === false){
-              clearInterval(int);
+              clearInterval(id);
               this.reset();
             }
             const now = new Date().getTime();
@@ -96,7 +117,10 @@
             
             this.timer = minutes+":"+seconds;
             
-            if(minutes === 0 && seconds === 0) clearInterval(int);
+            if(minutes === 0 && seconds === 0){
+              clearInterval(id);
+              this.toggleCount();
+            };
           },1000);
         },
         reset(){
