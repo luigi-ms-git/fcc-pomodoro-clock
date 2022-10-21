@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <main class="container pb-3 bg-primary text-white">
+  <main id="clock" class="container pb-3 bg-primary text-white">
     <div class="row">
       <div class="col-12">
         <h1 class="mt-3">Relógio Pomodoro</h1>
@@ -21,23 +21,23 @@
     </div>
     <div class="row">
       <div class="col-12 border border-light p-3 text-center" id="timer-label">
-        <p id="timer-left">25:00</p>
-        <button id="start_stop" class="btn btn-danger">Start</button>
-        <button id="reset" class="btn btn-info">Reset</button>
+        <p id="timer-left" class="fs-3">{{ timer }}</p>
+        <button @click="countDown" id="start_stop" class="btn btn-danger">{{ startStop }}</button>
+        <button @click="reset" id="reset" class="btn btn-info">Reset</button>
       </div>
     </div>
     <div class="row">
       <div class="col-6 p-2 border border-end border-light text-center" id="session">
         <p id="session-label">Tempo de sessão</p>
-        <button id="session-decrement" class="btn btn-outline-light">+</button>
-        <span id="session-length">25</span>
-        <button id="session-increment" class="btn btn-outline-light">-</button>
+        <button @click="incrementSession" id="session-decrement" class="btn btn-outline-light">+</button>
+        <span id="session-length">{{ sessionLength }}</span>
+        <button @click="decrementSession" id="session-increment" class="btn btn-outline-light">-</button>
       </div>
       <div class="col-6 p-2 border border-end border-light text-center" id="break">
         <p id="break-label">Tempo de pausa</p>
-        <button id="break-decrement" class="btn btn-outline-light">+</button>
-        <span id="break-length">5</span>
-        <button id="break-increment" class="btn btn-outline-light">-</button>
+        <button @click="incrementBreak" id="break-decrement" class="btn btn-outline-light">+</button>
+        <span id="break-length">{{ breakLength }}</span>
+        <button @click="decrementBreak" id="break-increment" class="btn btn-outline-light">-</button>
       </div>
     </div>
   </main>
@@ -46,16 +46,87 @@
 		integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" 
 		crossorigin="anonymous"></script>
 <!--	<script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
-
+-->
   <script type="module">
     import { createApp } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js'
   
+    const Values = {
+      MIN_LENGTH: 1,
+      MAX_LENGTH: 60,
+      DEFAULT_SESS: 25,
+      DEFAULT_BREAK: 5
+    };
+    
     createApp({
       data() {
-        return {}
+        return {
+          breakLength: Values.DEFAULT_BREAK,
+          sessionLength: Values.DEFAULT_SESS,
+          startStop: "Start",
+          timer: "",
+          started: false
+        }
       },
-      methods: {}
-    }).mount('#buttons');
-  </script> -->
+      watch: {
+        sessionLength(newSessionLength, oldSessionLength){
+          this.timer = this.sessionLength + ":00";
+        }
+      },
+      mounted(){
+        this.timer = this.sessionLength + ":00";
+      },
+      methods: {
+        countDown(){
+          this.startStop = "Stop";
+          this.started = !this.started;
+          
+          const start = new Date().getTime() + (this.sessionLength * 60000);
+          
+          const int = setInterval(() => {
+            if(this.started === false){
+              clearInterval(int);
+              this.reset();
+            }
+            const now = new Date().getTime();
+            
+            const diff = start - now;
+            
+            const minutes = Math.floor((diff % (1000 * 60 * 600)) / (1000 * 60)),
+            seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            
+            this.timer = minutes+":"+seconds;
+            
+            if(minutes === 0 && seconds === 0) clearInterval(int);
+          },1000);
+        },
+        reset(){
+          this.startStop = "Start";
+          this.started = false;
+          this.sessionLength = Values.DEFAULT_SESS;
+          this.breakLength = Values.DEFAULT_BREAK;
+        },
+        incrementSession(ev){
+          this.sessionLength = (this.sessionLength < Values.MAX_LENGTH)
+            ? this.sessionLength += 1
+            : Values.MIN_LENGTH;
+        },
+        decrementSession(ev){
+          this.sessionLength = (this.sessionLength > Values.MIN_LENGTH)
+            ? this.sessionLength -= 1
+            : Values.MAX_LENGTH;
+        },
+        incrementBreak(ev) {
+          this.breakLength = (this.breakLength < Values.MAX_LENGTH)
+            ? this.breakLength += 1
+            : Values.MIN_LENGTH;
+        },
+        decrementBreak(ev) {
+          this.breakLength = (this.breakLength > Values.MIN_LENGTH)
+            ? this.breakLength -= 1
+            : Values.MAX_LENGTH;
+        }
+      }
+    }).mount('#clock');
+  </script>
 </body>
 </html>
